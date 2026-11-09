@@ -1,0 +1,547 @@
+const commentAction = {
+    btnCommentClazz: ".btn-comment",
+    commentSectionClazz: ".comment-section",
+    commentLoading: ".comment-section .lds-loading",
+    commentIdFilter: "#comment-id-filter",
+    comicId: "#comic-id-comment",
+    btnLoadMore: ".btn-more",
+    btnReaction: ".btn-reaction",
+    btnReactionItem: ".reaction-item",
+    btnCommentReactionItem: ".comment-reaction-item",
+    isLoaded: false,
+    bufferLoaded: 1000,
+    commentScroll: 0,
+    page: 0,
+    timeout: 2000,
+    doComment: (_self) => {
+        if ($(_self).hasClass("btn-disable")) {
+            return;
+        }
+        if (!commonJS.isAuthenticated()) {
+            notification.show(commentMessages.requiredLogin, notification.Info)
+            return;
+        }
+        let input = $(_self).parent().find(".input-comment").val();
+        if (input.length < 5) {
+            notification.show(commentMessages.minLength, notification.Warn);
+            return;
+        }
+        const defaultTag = $(_self).parent().find(".input-comment").attr("data-tag");
+        if (!!defaultTag && defaultTag !== "" && !input.includes(defaultTag)) {
+            input = defaultTag + " " + input;
+        }
+        const parentId = $(_self).attr("data-id");
+        const comicId = $(commentAction.comicId).val();
+        const chapterN = $(commentAction.comicId).attr("data-number");
+        const type = $(commentAction.comicId).attr("data-type");
+        let data = {
+            comicId: comicId,
+            chapterNumber: chapterN,
+            parentCommentId: parentId,
+            content: input,
+            type: type
+        };
+        $(_self).addClass("btn-disable");
+        $.ajax({
+            url: jsContext + `/api/user/addComment`,
+            beforeSend: beforeAuth,
+            type: 'POST',
+            dataType: "json",
+            data: data
+        }).done(res => {
+            if (res.status === true) {
+                if (res.result.wait) {
+                    notification.show(res.result.message, notification.Warn);
+                    setTimeout(() => {
+                        $(_self).removeClass("btn-disable");
+                    }, 5000);
+                    return;
+                }
+                const commentSection = $(_self).parent();
+                const isReply = (commentSection).hasClass("input-2");
+                if (isReply) {
+                    const u = {
+                        username: commentMessages.username,
+                        content: commentAction.changeIdToNameComment(commentSection, input),
+                        dateTime: commentMessages.datetime,
+                        owner: true
+                    };
+                    $(commentSection).parent().parent().append(commentAction.buildChildCommentHtml(u, false, true));
+                    $(commentSection).closest(".active").removeClass("active")
+                    $(commentSection).remove();
+                } else {
+                    $(_self).prev().val("");
+                }
+                notification.show(res.result.message, notification.Success);
+            } else {
+                notification.show(res.messages[0], notification.Error);
+            }
+            $(_self).removeClass("btn-disable");
+        })
+    },
+    loadComment: (isLoadMore = false) => {
+        const comicId = $(commentAction.comicId).val();
+        const chapterN = $(commentAction.comicId).attr("data-number");
+        const commentId = $(commentAction.comicId).attr("data-commentId")
+        let data = {
+            value: comicId,
+            extraData: chapterN,
+            p: commentAction.page,
+            commentId: commentId
+        };
+        $.ajax({
+            url: jsContext + `/api/comic/comments`,
+            beforeSend: beforeAuth,
+            type: 'GET',
+            dataType: "json",
+            data: data
+        }).done(res => {
+            if (isLoadMore) {
+                $(commentAction.btnLoadMore).remove();
+            }
+            if (res.status === true) {
+                const data = res.result.comments;
+                if (data.length > 0) {
+                    let html = "";
+                    for (var i = 0; i < data.length; i++) {
+                        html += commentAction.buildCommentHTML(data[i], res.result.admin);
+                    }
+                    $(commentAction.commentSectionClazz).append(html);
+                }
+                if (res.result.hasMore) {
+                    $(commentAction.commentSectionClazz).append(commentAction.renderLoadMore());
+                }
+            }
+            $(commentAction.commentLoading).hide();
+        })
+    },
+    doDelete: (_self) => {
+        const data = commentAction.getDataComment(_self);
+        $.ajax({
+            url: jsContext + `/api/user/deleteComment`,
+            beforeSend: beforeAuth,
+            type: 'POST',
+            dataType: "json",
+            data: data
+        }).done(res => {
+            if (res.status === true) {
+                notification.show(commentMessages.deleteSuccess, notification.Success);
+                if (data.childId !== "") {
+                    $(_self).parent().parent().remove();
+                } else {
+                    $(_self).parent().parent().remove();
+                }
+            } else {
+                notification.show(res.messages[0], notification.Error);
+            }
+        })
+    },
+    doSpoil: (_self) => {
+        const data = commentAction.getDataComment(_self);
+        $.ajax({
+            url: jsContext + `/api/user/spoilComment`,
+            beforeSend: beforeAuth,
+            type: 'POST',
+            dataType: "json",
+            data: data
+        }).done(res => {
+            if (res.status === true) {
+                notification.show(commentMessages.hideSpoil, notification.Success);
+            } else {
+                notification.show(res.messages[0], notification.Error);
+            }
+        })
+    },
+    doAttached: (_self) => {
+        const data = commentAction.getDataComment(_self);
+        $.ajax({
+            url: jsContext + `/api/user/attachComment`,
+            beforeSend: beforeAuth,
+            type: 'POST',
+            dataType: "json",
+            data: data
+        }).done(res => {
+            if (res.status === true) {
+                notification.show(commentMessages.attached, notification.Success);
+            } else {
+                notification.show(res.messages[0], notification.Error);
+            }
+        })
+    },
+    doReportComment: (_self) => {
+        const isAgree = confirm(commentMessages.reportWarn);
+        if (isAgree) {
+            const isRoot = $(_self).parent().hasClass("action");
+            const index = $(_self).parent().parent().attr("data-index");
+            const commentId = isRoot ? $(_self).parent().parent().attr("data-id") : $(_self).closest(".comment").attr("data-id");
+            $.ajax({
+                url: jsContext + `/api/user/reportComment`,
+                beforeSend: beforeAuth,
+                type: 'POST',
+                dataType: "json",
+                data: {index, commentId}
+            }).done(res => {
+                if (res.status === true) {
+                    notification.show(commentMessages.reportComment, notification.Success);
+                } else {
+                    notification.show(commonMessages.unknownError, notification.Error);
+                }
+            })
+        }
+    },
+    doReply: (_self) => {
+        if (!commonJS.isAuthenticated()) {
+            notification.show(commentMessages.requiredLogin, notification.Info)
+            return;
+        }
+        $(_self).closest(".comment").find(".input-2").remove();
+        let _parent = $(_self).parent();
+        if ($(_parent).hasClass("action-sub")) {
+            _parent = $(_parent).parent();
+        }
+
+        const hasReply = $(_parent).find(".input");
+        $(_self).closest(".comment").addClass("active");
+        if (hasReply.length === 0) {
+            const commentId = $(_self).attr("data-id");
+            let tagName = $(_self).parent().find(".btn-tag").attr("data-n");
+            if (!tagName) {
+                tagName = "";
+            } else {
+                tagName = "@@" + tagName + "@@";
+            }
+
+            let name = "";
+            if ($(_parent).hasClass("action")) {
+                name = $(_parent).closest(".comment").children(".user").find(".name").text();
+            } else {
+                name = $(_parent).find(".user .name").text();
+            }
+
+            $(_parent).append(commentAction.buildInputHtml(commentId, tagName, name));
+        }
+
+    },
+    addTag: (_self) => {
+        const name = $(_self).attr("data-n");
+        const input = $(_self).closest(".comment").find(".input-comment");
+        const value = $(input).val() + " @@" + name + "@@ ";
+        $(input).val(value);
+    },
+    viewSpoilContent: (_self) => {
+        const content = $(_self).attr("data-content");
+        $(_self).closest("div").html(content);
+    },
+    addReact: (_self, type, index, commentId, isDirect = false) => {
+
+        $.ajax({
+            url: jsContext + `/api/user/addReactComment`,
+            beforeSend: beforeAuth,
+            type: 'POST',
+            dataType: "json",
+            data: {index, commentId, type}
+        }).done(res => {
+            if (res.status === true) {
+                if (res.result === "00") {
+                    notification.show(commonMessages.unknownError, notification.Error);
+                }
+                if (res.result === "01") {
+                    if (isDirect) {
+                        // Reduce old
+                        let addedItem = $(_self).parent().find(".added-item");
+                        if (addedItem.length > 0) {
+                            let item = addedItem[0];
+                            let countPrev = formatNumber(parseInt($(item).attr("data-count")) - 1);
+                            $(item).find("span").text(countPrev);
+                            $(item).attr("data-count", countPrev);
+                            $(item).removeClass("added-item");
+                        }
+
+                        let count = formatNumber(parseInt($(_self).attr("data-count")) + 1);
+                        $(_self).find("span").text(count);
+                        $(_self).attr("data-count", count);
+                        $(_self).addClass("added-item");
+                    } else {
+                        let image = $(_self).attr("data-image");
+                        const parent = $(_self).parent().parent().find(".icon-reaction");
+                        let htmlLayout = `<img title="Chọn lai emoji để gỡ" class="selected-reaction" src="`+ image +`">`;
+                        parent.html(htmlLayout);
+                    }
+                }
+                if (res.result === "02") {
+                    if (isDirect) {
+                        let count = formatNumber(parseInt($(_self).attr("data-count")) - 1);
+                        $(_self).find("span").text(count);
+                        $(_self).attr("data-count", count);
+                        $(_self).removeClass("added-item");
+                    } else {
+                        const parent = $(_self).parent().parent().find(".icon-reaction");
+                        $(parent).html(`<svg viewBox="0 0 20 20" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M13.5 10a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zM8 8.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm-.75 3.941a.75.75 0 1 0-1 1.118A5.614 5.614 0 0 0 10 15a5.614 5.614 0 0 0 3.75-1.441.75.75 0 0 0-1-1.118A4.113 4.113 0 0 1 10 13.5a4.113 4.113 0 0 1-2.75-1.059z"></path><path d="M10 .5a9.5 9.5 0 1 0 0 19 9.5 9.5 0 0 0 0-19zM2 10a8 8 0 1 1 16 0 8 8 0 0 1-16 0z"></path></svg>`)
+                    }
+                }
+            } else {
+                notification.show(res.messages[0], notification.Error);
+            }
+            $(_self).closest(commentAction.btnReaction).removeClass("active");
+        })
+    },
+    buildCommentHTML: (comment, isAdmin = false) => {
+        let removeHtml = commentAction.buildActionHtml(comment, comment.id, isAdmin);
+        const ownerHtml = comment.owner ? "your" : "";
+        let commentContent = commentAction.buildCommentContent(comment);
+        let highlightClass = "";
+        if (comment.highlight) {
+            highlightClass = "highlight-shimmer";
+        }
+        let htmlChapter = comment.chapterNumber !== "" ? `<span class="chapter">` + commentMessages.prefixChapter + ` ` + comment.chapterNumber + `</span>` : "";
+        let iconAttached = comment.attached ? `<svg class="attach-icon MuiSvgIcon-root" focusable="false" aria-hidden="true" viewBox="0 0 24 24" data-testid="PushPinIcon" tabindex="-1" title="PushPin"><path fill-rule="evenodd" d="M16 9V4h1c.55 0 1-.45 1-1s-.45-1-1-1H7c-.55 0-1 .45-1 1s.45 1 1 1h1v5c0 1.66-1.34 3-3 3v2h5.97v7l1 1 1-1v-7H19v-2c-1.66 0-3-1.34-3-3z"></path></svg>` : "";
+        let html = `<div class="comment" data-index="` + 0 + `" data-id="` + comment.id + `"><div class="user"><span class="name ` + ownerHtml + `">` + iconAttached + comment.username + " " + htmlChapter + `</span><span class="rank rank-` + comment.rank + `">` + comment.title + `</span><span class="time">` + comment.dateTime + `</span></div><div class="p-comment zs-bg-3 v-sheet theme-dark ` + highlightClass + `">` + commentContent + `</div>` + commentAction.buildUserReaction(comment) + `<div class="action"> ` + removeHtml + `</div>`;
+        if (!!comment.childrenComments) {
+            const childComments = comment.childrenComments;
+            const len = childComments.length;
+            const hideChildComment = len > 3;
+            if (hideChildComment) {
+                html += `<div class="hide-comment">Hiển thị ` + (len - 2) + ` bình luận cũ</div>`;
+            }
+            for (let i = 0; i < len; i++) {
+                childComments[i].index = i + 1;
+                let clazzHide = "";
+                if (hideChildComment && i < len - 2) {
+                    clazzHide = "hide";
+                }
+                html += commentAction.buildChildCommentHtml(childComments[i], comment.id, clazzHide, isAdmin);
+            }
+        }
+        html += "</div>";
+        return html;
+    },
+    buildChildCommentHtml: (comment, parentId, clazzHide, isAdmin = false, temp = false) => {
+        let removeHtml = commentAction.buildActionHtml(comment, parentId, isAdmin, temp);
+        let title = "";
+        if (!!comment.title) {
+            title = comment.title;
+        }
+        const ownerHtml = comment.owner ? "your" : "";
+        let childrenHTML = `<div class="c-comment ` + clazzHide + `" data-index="` + comment.index + `"  data-id="` + comment.id + `"><div class="user"><span class="name ` + ownerHtml + `">` + comment.username + `</span><span class="rank rank-` + comment.rank + `">` + title + `</span><span class="time">` + comment.dateTime + `</span></div><div class="comment zs-bg-3 v-sheet theme-dark">` + commentAction.buildCommentContent(comment) + `</div>` + commentAction.buildUserReaction(comment) + `<div class="action-sub"> ` + removeHtml + `</div></div>`;
+        return childrenHTML;
+    },
+    buildActionHtml: (comment, parentId, isAdmin = false, temp = false) => {
+        let removeHtml = "";
+        removeHtml += `<span class="btn-reply" data-id="` + parentId + `">` + commentMessages.txtReply +`</span>`;
+        if (!temp && (isAdmin || comment.owner)) {
+            removeHtml += `<span class="btn-del">` + commentMessages.txtDelete + ` </span>`;
+        }
+        if (isAdmin) {
+            removeHtml += `<span class="btn-spoil">` + commentMessages.txtSpoil + ` </span>`;
+            removeHtml += `<span class="btn-attached">` + commentMessages.txtAttach + ` </span>`;
+        }
+        if (!comment.owner) {
+            removeHtml += `<span class="btn-report-cmt">` + commentMessages.txtReport + ` </span><span class="btn-tag" data-n="` + comment.id + `">` + commentMessages.txtTag + ` </span>`;
+            removeHtml += `<span class="btn-reaction" title="React with an emoji"><span class="icon-reaction"><svg viewBox="0 0 20 20" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M13.5 10a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zM8 8.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm-.75 3.941a.75.75 0 1 0-1 1.118A5.614 5.614 0 0 0 10 15a5.614 5.614 0 0 0 3.75-1.441.75.75 0 0 0-1-1.118A4.113 4.113 0 0 1 10 13.5a4.113 4.113 0 0 1-2.75-1.059z"></path><path d="M10 .5a9.5 9.5 0 1 0 0 19 9.5 9.5 0 0 0 0-19zM2 10a8 8 0 1 1 16 0 8 8 0 0 1-16 0z"></path></svg></span>
+                        <div class="reaction-popup">
+                            <div class="reaction-item like" data-type="LIKE" data-title="Thích" data-image="/contents/images/emoji/like.png">
+                               <img src="/contents/images/emoji/like.png">
+                            </div>
+                            <div class="reaction-item care" data-type="CARE" data-title="Thương Thương" data-image="/contents/images/emoji/care.png">
+                               <img src="/contents/images/emoji/care.png">
+                            </div>
+                            <div class="reaction-item haha" data-type="HAHA" data-title="Haha" data-image="/contents/images/emoji/haha.png">
+                               <img src="/contents/images/emoji/haha.png">
+                            </div>
+                            <div class="reaction-item sad" data-type="SAD" data-title="Buồn" data-image="/contents/images/emoji/sad.png">
+                               <img src="/contents/images/emoji/sad.png">
+                            </div>
+                            <div class="reaction-item angry" data-type="ANGRY" data-title="Giận" data-image="/contents/images/emoji/angry.png">
+                               <img src="/contents/images/emoji/angry.png">
+                            </div>
+                        </div>
+                    </span>`;
+        }
+
+
+
+        return removeHtml;
+    },
+    buildCommentContent: (comment) => {
+        if (comment.spoil) {
+            return commentMessages.txtSpoilContent.replace("{0}", comment.content);
+        }
+        return comment.content;
+    },
+    buildUserReaction: (comment) => {
+        let html = "";
+        let hasNoReaction = true;
+        let baseCount = 0;
+        if (comment.like > baseCount) {
+            hasNoReaction = false;
+            html += `<div title="` + comment.like + ` người thích bình luận của bạn" data-type="LIKE" data-count="` + comment.like + `" class="comment-reaction-item like"><img src="/contents/images/emoji/like.png"><span>` + formatNumber(comment.like) + `</span></div>`;
+        }
+        if (comment.care > baseCount) {
+            hasNoReaction = false;
+            html += `<div title="` + comment.care + ` người thương bình luận của bạn" data-type="CARE" data-count="` + comment.care + `" class="comment-reaction-item care"><img src="/contents/images/emoji/care.png"><span>` + formatNumber(comment.care) + `</span></div>`;
+        }
+        if (comment.haha > baseCount) {
+            hasNoReaction = false;
+            html += `<div title="` + comment.haha + ` người cười bình luận của bạn" data-type="HAHA" data-count="` + comment.haha + `" class="comment-reaction-item haha"><img src="/contents/images/emoji/haha.png"><span>` + formatNumber(comment.haha) + `</span></div>`;
+        }
+        if (comment.sad > baseCount) {
+            hasNoReaction = false;
+            html += `<div title="` + comment.sad + ` nguời buồn bình luận của bạn" data-type="SAD" data-count="` + comment.sad + `" class="comment-reaction-item sad"><img src="/contents/images/emoji/sad.png"><span>` + formatNumber(comment.sad) + `</span></div>`;
+        }
+        if (comment.angry > baseCount) {
+            hasNoReaction = false;
+            html += `<div title="` + comment.angry + ` người cảm thấy phẩn nộ bình luận của bạn" data-type="ANGRY" data-count="` + comment.angry + `" class="comment-reaction-item angry"><img src="/contents/images/emoji/angry.png"><span>` + formatNumber(comment.angry) + `</span></div>`;
+        }
+
+        return hasNoReaction ? "" : `<div class="comment-reaction">` + html + `</div>`;
+    },
+    buildInputHtml: (commentId, tagName, name) => {
+        if (tagName === "") {
+            name = "" + commentMessages.txtPlaceHolder;
+        } else {
+            name = commentMessages.replyTo.replace("{0}", name);
+        }
+        return `<div class="input input-2"><textarea class="input-comment" data-tag="`+ tagName +`" placeholder="` + name + `" maxlength="500"></textarea><button data-id="` + commentId + `" class="btn-comment mx-1 rounded-sm zs-bg-3 mr-4 btn-default btn-default-is-elevated theme-dark btn-size-default">` + commentMessages.txtBtnSend + `</button></div>`
+    },
+    renderLoadMore: () => {
+        return `<div class="btn-more btn-style-dash rounded-sm zs-bg-3 theme-dark">` + commentMessages.txtBtnMore + ` </div>`;
+    },
+    getDataComment: (_self) => {
+        let childId = "";
+        const isChildComment = $(_self).parent().parent().hasClass("c-comment");
+        let cmtId = "";
+        if (isChildComment) {
+            childId = $(_self).parent().parent().attr("data-id");
+            cmtId = $(_self).parent().parent().parent().attr("data-id");
+        } else {
+            cmtId = $(_self).parent().parent().attr("data-id");
+        }
+        const data = {
+            id: cmtId,
+            childId: childId,
+        };
+        return data;
+    },
+    showHiddenComment: (_self) => {
+        $(_self).parent().find(".hide").removeClass("hide");
+        $(_self).remove();
+    },
+    changeIdToNameComment: (_self, content) => {
+        const mapIdToName = {};
+        const parentComment = $(_self).closest(".comment");
+        let commentName = $(parentComment).find("> .user > .name").text();
+        if (commentName.indexOf("Chương") !== -1) {
+            commentName = commentName.substring(0, commentName.indexOf("Chương"));
+        }
+        if (commentName.indexOf("Chapter") !== -1) {
+            commentName = commentName.substring(0, commentName.indexOf("Chapter"));
+        }
+        mapIdToName[$(parentComment).attr("data-id")] = commentName;
+
+        const childComments = $(parentComment).find(".c-comment");
+        for (let i = 0; i < childComments.length; i++) {
+            mapIdToName[$(childComments[i]).attr("data-id")] = $(childComments[i]).find("> .user > .name").text();
+        }
+
+        var reg = /@@(.*?)@@/;
+        var match = reg.exec(content);
+        while (!!match) {
+            content = content.replaceAll(match[0], "<span class='link-tag'>#" + mapIdToName[match[1]] + "</span>");
+            match = reg.exec(content);
+        }
+        return content;
+    },
+    checkLoadComment: () => {
+        if (commentAction.isLoaded) {
+            return;
+        }
+        try {
+            commentAction.commentScroll = window.scrollY || document.documentElement.scrollTop;
+            if (commentAction.commentScroll + window.innerHeight + commentAction.bufferLoaded > $(commentAction.commentSectionClazz).offset().top) {
+                commentAction.loadComment();
+                commentAction.isLoaded = true;
+            }
+        } catch (e) {
+            commentAction.loadComment();
+            commentAction.isLoaded = true;
+        }
+    }
+};
+$(document).ready(function () {
+    setTimeout(() => {commentAction.checkLoadComment();}, commentAction.timeout);
+    $(document).on("click", ".btn-comment", function () {
+        commentAction.doComment(this);
+    });
+    $(document).on("click", ".btn-reply", function (e) {
+        e.stopPropagation();
+        commentAction.doReply(this);
+    });
+    $(document).on("click", ".btn-del", function (e) {
+        e.stopPropagation();
+        commentAction.doDelete(this);
+    });
+    $(document).on("click", ".btn-spoil", function (e) {
+        e.stopPropagation();
+        commentAction.doSpoil(this);
+    });
+    $(document).on("click", ".btn-attached", function (e) {
+        e.stopPropagation();
+        commentAction.doAttached(this);
+    });
+    $(document).on("click", ".btn-tag", function (e) {
+        e.stopPropagation();
+        commentAction.addTag(this);
+    });
+    $(document).on("click", ".btn-report-cmt", function (e) {
+        e.stopPropagation();
+        commentAction.doReportComment(this);
+    });
+    $(document).on("click", ".view-comment-spoil", function (e) {
+        e.stopPropagation();
+        commentAction.viewSpoilContent(this);
+    });
+    $(document).on("click", commentAction.btnReactionItem, function (e) {
+        e.stopPropagation();
+        let type = $(this).attr("data-type");
+        const parentCmt = $(this).parent().parent().parent();
+        const isRoot = $(parentCmt).hasClass("action");
+        const index = $(parentCmt).parent().attr("data-index");
+        const commentId = isRoot ? $(parentCmt).parent().attr("data-id") : $(this).closest(".comment").attr("data-id");
+        commentAction.addReact(this, type, index, commentId);
+    });
+
+    $(document).on("click", commentAction.btnCommentReactionItem, function (e) {
+        e.stopPropagation();
+        let type = $(this).attr("data-type");
+        const parentCmt = $(this).parent().parent();
+        const isRoot = $(parentCmt).hasClass("c-comment");
+        const index = $(parentCmt).attr("data-index");
+        const commentId = !isRoot ? $(parentCmt).attr("data-id") : $(this).closest(".comment").attr("data-id");
+        commentAction.addReact(this, type, index, commentId, true);
+    });
+    $(document).on("click", commentAction.btnLoadMore, function () {
+        $(this).html(`<div class="lds-loading"><div></div><div></div><div></div></div>`);
+        commentAction.page += 1;
+        commentAction.loadComment(true);
+    });
+    $(document).on("click", commentAction.btnReaction, function () {
+        if (!commonJS.isAuthenticated()) {
+            notification.show(commentMessages.requiredLogin, notification.Info)
+            return;
+        }
+
+        if ($(this).hasClass("active")) {
+            $(this).removeClass("active");
+            return;
+        }
+        $(commentAction.btnReaction).removeClass("active");
+        $(this).addClass("active");
+    });
+    $(document).on("click", ".hide-comment", function () {
+        commentAction.showHiddenComment(this);
+    });
+    try {
+        window.addEventListener('scroll', () => {commentAction.checkLoadComment();});
+    } catch (e) {
+    }
+});
