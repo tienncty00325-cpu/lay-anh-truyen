@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manga & Comic Downloader Pro | Tool Cào & Tải Ảnh Truyện Tranh Thông Minh</title>
+  <meta name="description" content="Công cụ cào và tải ảnh truyện tranh thông minh từ mọi website theo link. Hỗ trợ xuất file ZIP, PDF và lưu trực tiếp vào máy tính.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="bg-glow-container">
+    <div class="glow-orb orb-1"></div>
+    <div class="glow-orb orb-2"></div>
+    <div class="glow-orb orb-3"></div>
+  </div>
+
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="logo-area">
+        <div class="logo-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"></path>
+            <path d="M6 6h10"></path>
+            <path d="M6 10h10"></path>
+            <path d="M6 14h6"></path>
+            <path d="m14 17 3 3 5-5"></path>
+          </svg>
+        </div>
+        <div>
+          <h1 class="app-title">Manga Crawler <span>Pro</span></h1>
+          <p class="app-subtitle">Công cụ tải ảnh truyện tranh thẳng về máy tính siêu tốc</p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button id="btn-open-folder" class="btn btn-secondary" title="Mở thư mục downloads trên máy tính">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 8 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"></path>
+          </svg>
+          <span>Mở Thư Mục Tải Về</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="nav-tabs">
+      <button class="tab-btn active" data-tab="tab-crawler" id="tab-mode-single">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+        <span>Tải Truyện Thẳng Về Máy</span>
+      </button>
+      <button class="tab-btn" data-tab="tab-crawler" id="tab-mode-batch">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+        <span>Lấy Tất Cả Truyện</span>
+      </button>
+      <button class="tab-btn" data-tab="tab-history">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+        <span>Lịch Sử Tải Về</span>
+        <span id="history-badge" class="badge">0</span>
+      </button>
+      <button class="tab-btn" data-tab="tab-guide">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+        <span>Hướng Dẫn & Mẹo</span>
+      </button>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- TAB 1: CRAWLER -->
+      <section id="tab-crawler" class="tab-pane active">
+        <!-- Input Card -->
+        <div class="card glass-card input-card">
+          <div class="card-header">
+            <h2 class="card-title">Nhập Link Truyện Tranh</h2>
+            <span class="tag-status">Tải trực tiếp vào ổ đĩa máy tính - Không lo nặng web</span>
+          </div>
+
+          <div class="input-group-wrapper">
+            <div class="input-icon-box">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+            </div>
+            <input
+              type="url"
+              id="input-url"
+              class="custom-input"
+              placeholder="Dán link chapter truyện tại đây (VD: TruyenQQ, NetTruyen, MangaKakalot...)"
+              autocomplete="off"
+            />
+            <button id="btn-paste" class="btn btn-icon" title="Dán từ Clipboard">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
+            </button>
+            <button id="btn-direct-download" class="btn btn-success btn-glow btn-direct-download" title="Quét và tải thẳng về máy tính ngay mà không tải ảnh lên web">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+              <span>⚡ TẢI THẲNG VỀ MÁY</span>
+            </button>
+            <button id="btn-download-all" class="btn btn-primary btn-glow btn-download-all" title="Quét và tải toàn bộ tất cả các chương của bộ truyện" style="display: none;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+              <span>📚 LẤY TẤT CẢ TRUYỆN</span>
+            </button>
+            <button id="btn-scrape" class="btn btn-secondary btn-scrape" title="Chỉ quét thông tin và xem trước">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              <span>Xem Trước</span>
+            </button>
+          </div>
+
+          <!-- Advanced Options -->
+          <div class="options-bar">
+            <div class="option-item">
+              <label class="switch-label">
+                <input type="checkbox" id="chk-dynamic-mode">
+                <span class="switch-slider"></span>
+                <span class="switch-text">
+                  <strong>Chế độ Trình duyệt ảo (Headless Browser)</strong>
+                  <small>Dùng khi trang web dùng JavaScript hoặc anti-bot</small>
+                </span>
+              </label>
+            </div>
+
+            <div class="export-options" style="margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px; display: block;">
+              <div style="margin-bottom: 15px;">
+                <span class="options-title" style="display: block; margin-bottom: 8px;">Nơi lưu ảnh (Tùy chọn):</span>
+                <div style="display: flex; gap: 8px;">
+                  <input type="text" id="input-save-path" class="custom-input" placeholder="Để trống để lưu vào thư mục mặc định" style="flex: 1; min-width: 0;">
+                  <button id="btn-choose-folder" class="btn btn-secondary" title="Chọn thư mục trên máy tính" style="white-space: nowrap;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                    Chọn Thư Mục
+                  </button>
+                </div>
+              </div>
+              
+              <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+                <span class="options-title">Định dạng xuất:</span>
+                <label class="checkbox-label">
+                  <input type="checkbox" id="chk-export-folder">
+                  <span>Lưu Thư mục</span>
+                </label>
+                <label class="checkbox-label">
+                  <input type="checkbox" id="chk-export-zip">
+                  <span>Nén ZIP</span>
+                </label>
+                <label class="checkbox-label">
+                  <input type="checkbox" id="chk-export-pdf">
+                  <span>Xuất PDF</span>
+                </label>
+                <label class="checkbox-label" style="margin-left: auto;">
+                  <input type="checkbox" id="chk-show-preview">
+                  <span>Hiện ảnh xem trước</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Test Samples -->
+          <div class="quick-samples-bar">
+            <span class="quick-label">⚡ Link mẫu thử nhanh:</span>
+            <button class="pill-sample" data-url="https://truyenqqko.com/truyen-tranh/moi-linh-danh-thue-tro-ve-deu-co-mot-ke-hoach-16550">Trang chủ Truyện (Đế test tải hàng loạt)</button>
+            <button class="pill-sample" data-url="https://truyenqqko.com/truyen-tranh/moi-linh-danh-thue-tro-ve-deu-co-mot-ke-hoach-16550-chap-95">TruyenQQ (Lính Đánh Thuê Chap 95)</button>
+            <button class="pill-sample" data-url="https://nettruyen.gg/truyen-tranh/ta-co-the-don-ngo-vo-han/chuong-1">NetTruyen (Đốn Ngộ Chap 1)</button>
+            <button class="pill-sample" data-url="https://nettruyen.gg/truyen-tranh/dung-treu-choc-doc-nu-trong-sinh-chi-vi-bao-thu/chuong-1">NetTruyen (Độc Nữ Chap 1)</button>
+          </div>
+        </div>
+
+        <!-- Scrape Progress & Status Notification -->
+        <div id="status-card" class="card status-card hidden">
+          <div class="status-content">
+            <div class="spinner"></div>
+            <div class="status-texts">
+              <h3 id="status-title" class="status-title">Đang quét dữ liệu...</h3>
+              <p id="status-desc" class="status-desc">Hệ thống đang phân tích trang web và lọc ảnh chất lượng cao.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Download Progress Bar Card -->
+        <div id="progress-card" class="card progress-card hidden">
+          <div class="progress-header">
+            <div>
+              <h3 id="progress-title" class="progress-title">Đang tải hình ảnh thẳng về máy...</h3>
+              <p id="progress-message" class="progress-message">Chuẩn bị kết nối...</p>
+            </div>
+            <div class="progress-percent" id="progress-percent">0%</div>
+          </div>
+          <div class="progress-bar-bg">
+            <div id="progress-bar-fill" class="progress-bar-fill" style="width: 0%;"></div>
+          </div>
+          <div id="download-results-actions" class="download-results-actions hidden">
+            <!-- Dynamic Download Buttons (ZIP, PDF, Folder) -->
+          </div>
+        </div>
+
+        <!-- Batch Chapter Selection (If manga page has chapter list) -->
+        <div id="batch-card" class="card glass-card batch-card hidden">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">Phát hiện Danh Sách Chương</h2>
+              <p class="card-subtitle">Trang web chứa nhiều chapter. Bạn có thể chọn tải chương bạn muốn:</p>
+            </div>
+            <div class="batch-actions">
+              <button id="btn-select-all-chapters" class="btn btn-sm btn-secondary">Chọn Tất Cả</button>
+              <button id="btn-deselect-all-chapters" class="btn btn-sm btn-secondary">Bỏ Chọn</button>
+            </div>
+          </div>
+          <div id="chapter-list-grid" class="chapter-list-grid">
+            <!-- Render chapter items -->
+          </div>
+          <div class="batch-footer" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; align-items: center; gap: 15px;">
+            <div style="font-size: 13.5px; color: var(--text-muted);">
+              Đã chọn: <strong id="stat-selected-chapters" style="color: var(--accent);">0</strong> chương
+            </div>
+            <button id="btn-download-selected-chapters" class="btn btn-primary btn-glow" disabled>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+              <span>Tải Các Chương Đã Chọn</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Scraped Result / Metadata & Action Toolbar -->
+        <div id="result-toolbar" class="result-toolbar card glass-card hidden">
+          <div class="manga-info-edit">
+            <div class="info-field">
+              <label>Tên Truyện:</label>
+              <input type="text" id="meta-manga-title" class="input-inline" placeholder="Tên truyện">
+            </div>
+            <div class="info-field">
+              <label>Tên Chapter:</label>
+              <input type="text" id="meta-chapter-title" class="input-inline" placeholder="Tên chapter">
+            </div>
+          </div>
+
+          <div class="toolbar-stats">
+            <div class="stat-badge">
+              <span class="stat-label">Tổng số ảnh:</span>
+              <strong id="stat-total-images">0</strong>
+            </div>
+            <div class="stat-badge">
+              <span class="stat-label">Đã chọn:</span>
+              <strong id="stat-selected-images">0</strong>
+            </div>
+          </div>
+
+          <div class="toolbar-buttons">
+            <button id="btn-toggle-select-images" class="btn btn-secondary">Bỏ chọn tất cả</button>
+            <button id="btn-start-download" class="btn btn-success btn-glow">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+              <span>Tải Toàn Bộ Ảnh Này Về Máy</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Image Gallery Preview -->
+        <div id="gallery-container" class="gallery-container hidden">
+          <div class="gallery-header">
+            <h3 class="gallery-title">Bộ Sưu Tập Ảnh Đã Trích Xuất</h3>
+            <p class="gallery-desc">Nhấp vào ảnh để xem toàn màn hình (Phóng to / Thu nhỏ). Bạn có thể bỏ tích các ảnh không mong muốn.</p>
+          </div>
+          <div id="image-grid" class="image-grid">
+            <!-- Dynamic Image Cards -->
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: DOWNLOAD HISTORY -->
+      <section id="tab-history" class="tab-pane">
+        <div class="card glass-card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">Tệp Đã Tải Về</h2>
+              <p class="card-subtitle">Quản lý các file ZIP, PDF và thư mục truyện tranh trong máy</p>
+            </div>
+            <div class="history-controls">
+              <button id="btn-refresh-history" class="btn btn-secondary btn-sm">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                <span>Làm Mới</span>
+              </button>
+              <button id="btn-open-folder-tab" class="btn btn-primary btn-sm">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 8 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"></path></svg>
+                <span>Mở Trong Explorer</span>
+              </button>
+            </div>
+          </div>
+
+          <div id="history-list" class="history-list">
+            <!-- Dynamic History Items -->
+            <div class="empty-state">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+              <p>Chưa có file tải về nào. Hãy nhập link truyện để tải ngay!</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 3: GUIDE & TIPS -->
+      <section id="tab-guide" class="tab-pane">
+        <div class="card glass-card guide-card">
+          <h2 class="card-title">Hướng Dẫn Cấu Hình & Sử Dụng Toàn Diện</h2>
+          
+          <div class="guide-grid">
+            <div class="guide-item">
+              <div class="guide-icon">1</div>
+              <div>
+                <h3>Chế độ: Tải Truyện Thẳng Về Máy (Tải 1 Chương)</h3>
+                <p>Sử dụng khi bạn chỉ muốn tải một chapter cụ thể. Dán link chapter đó và nhấn <strong>⚡ TẢI THẲNG VỀ MÁY</strong>. Backend sẽ tải siêu tốc 100-200 ảnh thẳng vào ổ cứng mà không cần hiển thị lên web để tránh giật lag.</p>
+              </div>
+            </div>
+
+            <div class="guide-item">
+              <div class="guide-icon">2</div>
+              <div>
+                <h3>Chế độ: Lấy Tất Cả Truyện (Tải Hàng Loạt)</h3>
+                <p>Chuyển sang tab <strong>Lấy Tất Cả Truyện</strong> ở trên cùng. Dán link <strong>TRANG CHỦ</strong> của bộ truyện vào, hệ thống sẽ quét toàn bộ danh sách chương và tự động tải hàng loạt tất cả các chương cho bạn.</p>
+              </div>
+            </div>
+
+            <div class="guide-item">
+              <div class="guide-icon">3</div>
+              <div>
+                <h3>Định Dạng Xuất (ZIP, PDF, Thư Mục)</h3>
+                <p>Bạn bắt buộc phải chọn ít nhất 1 định dạng xuất trước khi tải. Có thể chọn <code>Lưu Thư mục</code> rời rạc, đóng gói thành file nén <code>ZIP</code>, hoặc xuất <code>PDF</code> để xem mượt mà trên điện thoại, máy tính bảng.</p>
+              </div>
+            </div>
+
+            <div class="guide-item">
+              <div class="guide-icon">4</div>
+              <div>
+                <h3>Tùy Chọn Vị Trí Lưu & Lịch Sử</h3>
+                <p>Mặc định file lưu tại <code>./downloads/[Tên Truyện]</code>. Bạn có thể nhấn <strong>Chọn Thư Mục</strong> để lưu sang ổ D, E tùy ý. Mọi file tải về đều có thể quản lý, mở lại nhanh chóng ở tab <strong>Lịch Sử Tải Về</strong>.</p>
+              </div>
+            </div>
+
+            <div class="guide-item">
+              <div class="guide-icon">5</div>
+              <div>
+                <h3>Trình Duyệt Ảo (Headless Browser)</h3>
+                <p>Nếu link truyện bị lỗi hoặc không quét được ảnh do trang web có Cloudflare, chặn Bot hoặc tải bằng JavaScript, hãy bật công tắc <strong>Chế độ Trình duyệt ảo</strong> để phần mềm mở một tab ẩn lách bảo mật.</p>
+              </div>
+            </div>
+
+            <div class="guide-item">
+              <div class="guide-icon">6</div>
+              <div>
+                <h3>Xem Trước & Lọc Trang Quảng Cáo</h3>
+                <p>Tích chọn <strong>Hiện ảnh xem trước</strong> hoặc nhấn nút <strong>Xem Trước</strong>. Bạn sẽ thấy danh sách ảnh hiện ra, có thể nhấp vào để phóng to (Zoom) và <strong>Bỏ Tích</strong> các trang quảng cáo, trang rác không mong muốn trước khi tải thực tế.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Lightbox Zoom Modal -->
+    <div id="lightbox-modal" class="lightbox-modal hidden">
+      <div class="lightbox-overlay"></div>
+      <div class="lightbox-content">
+        <button id="btn-close-lightbox" class="lightbox-close-btn">&times;</button>
+        <button id="btn-prev-image" class="lightbox-nav-btn prev">&#10094;</button>
+        <button id="btn-next-image" class="lightbox-nav-btn next">&#10095;</button>
+        <div class="lightbox-image-wrapper">
+          <img id="lightbox-img" src="" alt="Manga Page">
+        </div>
+        <div class="lightbox-caption" id="lightbox-caption">Trang 1 / 20</div>
+      </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast-container" class="toast-container"></div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
